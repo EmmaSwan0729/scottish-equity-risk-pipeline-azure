@@ -1,0 +1,19 @@
+# Equity tickers tracked by the Scottish Equity Risk Pipeline
+# Add or remove tickers here to extend or reduce the portfolio
+tickers:
+  - symbol: NWG.L
+    name: NatWest Group
+  - symbol: ABDN.L
+    name: abrdn plc
+  - symbol: SMT.L
+    name: Scottish Mortgage Investment Trust
+  - symbol: MNKS.L
+    name: Monks Investment Trust
+  - symbol: AV.L
+    name: Aviva
+  - symbol: HIK.L
+    name: Hikma Pharmaceuticals
+  - symbol: SSE.L
+    name: SSE plc
+  - symbol: WEIR.L
+    name: Weir Group
