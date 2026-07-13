@@ -1,0 +1,16 @@
+# Scottish Equity Risk Pipeline(azure) - Streaming
+# In a virtualenv: pip install -r requirements_streaming_azure.txt
+# Outside a virtualenv (system Python): add --break-system-packages
+
+# Azure Event Hubs SDK (replace kafka-python)
+azure-eventhub==5.11.5
+
+# Azure RBAC authentication (already used in upload_to_adls.py - reuse the same credential chain)
+azure-identity==1.16.0
+
+# Unchanged from the AWS version's requirements_streaming.txt
+yfinance==0.2.38
+pandas==2.2.2
+numpy==1.26.4
+pyyaml==6.0.1
+python-dotenv==1.0.1
