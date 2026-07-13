@@ -186,7 +186,7 @@ def create_producer() -> EventHubProducerClient:
         eventhub_name=EVENT_HUB_NAME,
         credential=credential,
     )
-    logger.info(f"Event Hubs Producer connected successfully.")
+    logger.info("Event Hubs Producer connected successfully.")
     return producer
 
 
