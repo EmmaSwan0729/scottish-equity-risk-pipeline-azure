@@ -190,19 +190,3 @@ query = (
 # query.awaitTermination() is intentionally omitted: in a notebook it would
 # block the cell indefinitely. The query runs in the background; stop it
 # from a separate cell with query.stop() when finished.
-
-# COMMAND ----------
-
-display(dbutils.fs.ls(ALERTS_PATH))
-
-# COMMAND ----------
-
-display(spark.read.format("delta").load(ALERTS_PATH))
-
-# COMMAND ----------
-
-query.stop()
-
-# COMMAND ----------
-
-spark.streams.active

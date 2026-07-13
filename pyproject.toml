@@ -1,0 +1,5 @@
+[tool.ruff]
+builtins = ["spark", "dbutils"]
+
+[tool.ruff.lint.per-file-ignores]
+"streaming/databricks_streaming_consumer.py" = ["E402"]
