@@ -11,19 +11,18 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def load_tickers(config_path:str="config/tickers.yaml") -> list:
-    with open(config_path,'r') as f:
+
+def load_tickers(config_path: str = "config/tickers.yaml") -> list:
+    with open(config_path, "r") as f:
         config = yaml.safe_load(f)
-    return [item['symbol'] for item in config['tickers']]
+    return [item["symbol"] for item in config["tickers"]]
+
 
 SCOTTISH_TICKERS = load_tickers()
 
-def fetch_stock_data(
-        tickers:list,
-        start_date: str,
-        end_date:str
-) -> pd.DataFrame:
-    
+
+def fetch_stock_data(tickers: list, start_date: str, end_date: str) -> pd.DataFrame:
+
     all_data = []
 
     for ticker in tickers:
@@ -31,10 +30,10 @@ def fetch_stock_data(
         try:
             df = yf.download(
                 ticker,
-                start = start_date,
-                end = end_date,
-                auto_adjust = True,
-                progress = False,   
+                start=start_date,
+                end=end_date,
+                auto_adjust=True,
+                progress=False,
             )
 
             if df.empty:
@@ -42,7 +41,9 @@ def fetch_stock_data(
                 continue
 
             df = df.reset_index()
-            df.columns = [c[0].lower() if isinstance(c, tuple) else c.lower() for c in df.columns]
+            df.columns = [
+                c[0].lower() if isinstance(c, tuple) else c.lower() for c in df.columns
+            ]
             df["symbol"] = ticker
             df["ingested_at"] = datetime.now(timezone.utc).isoformat()
 
@@ -52,22 +53,23 @@ def fetch_stock_data(
         except Exception as e:
             logger.error(f"Failed to fetch {ticker}: {e}")
             continue
-    
+
     if not all_data:
         raise ValueError("No data fetched for any ticker.")
-    
+
     combined = pd.concat(all_data, ignore_index=True)
     logger.info(f"Total rows fetched: {len(combined)}")
     return combined
+
 
 if __name__ == "__main__":
     end = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     start = (datetime.now(timezone.utc) - timedelta(days=365)).strftime("%Y-%m-%d")
 
     df = fetch_stock_data(
-        tickers = SCOTTISH_TICKERS,
-        start_date = start,
-        end_date = end,
+        tickers=SCOTTISH_TICKERS,
+        start_date=start,
+        end_date=end,
     )
 
     print(df.head(5))

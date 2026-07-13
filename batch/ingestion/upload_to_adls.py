@@ -15,9 +15,10 @@ logger = logging.getLogger(__name__)
 STORAGE_ACCOUNT_NAME = os.getenv("AZURE_STORAGE_ACCOUNT_NAME")
 CONTAINER_NAME = os.getenv("AZURE_CONTAINER_NAME", "raw")
 
+
 def get_service_client(account_name: str) -> DataLakeServiceClient:
     """
-    Build a DataLakeServiceClient authenticated via DefaultAzureCredential. 
+    Build a DataLakeServiceClient authenticated via DefaultAzureCredential.
     DefaultAzureCredential resolves identity through a fixed provider chain
     (environment variables, managed identity, Azure CLI login, etc.), so the
     same code path authenticates locally via `az login` and, without changes,
@@ -25,14 +26,12 @@ def get_service_client(account_name: str) -> DataLakeServiceClient:
     in code or configuration files.
     """
     account_url = f"https://{account_name}.dfs.core.windows.net"
-    credential  = DefaultAzureCredential()
+    credential = DefaultAzureCredential()
     return DataLakeServiceClient(account_url=account_url, credential=credential)
 
+
 def upload_df_to_adls(
-        df: pd.DataFrame,
-        account_name: str,
-        container:str,
-        date: str
+    df: pd.DataFrame, account_name: str, container: str, date: str
 ) -> str:
     # Container is already named "raw", so the "raw/" prefix used in the
     # original S3 key is dropped here to avoid redundant nesting.
@@ -42,7 +41,7 @@ def upload_df_to_adls(
     df.to_parquet(parquet_buffer, index=False)
     parquet_buffer.seek(0)
     data = parquet_buffer.getvalue()
-    
+
     service_client = get_service_client(account_name)
     file_system_client = service_client.get_file_system_client(file_system=container)
     file_client = file_system_client.get_file_client(file_path)
@@ -58,6 +57,7 @@ def upload_df_to_adls(
     logger.info(f"Upload {len(df)} rows to {adls_path}")
     return adls_path
 
+
 if __name__ == "__main__":
     from fetch_stock_data import fetch_stock_data, SCOTTISH_TICKERS
     from datetime import timedelta
@@ -66,9 +66,9 @@ if __name__ == "__main__":
     start = (datetime.today() - timedelta(days=365)).strftime("%Y-%m-%d")
 
     df = fetch_stock_data(
-        tickers = SCOTTISH_TICKERS,
-        start_date = start,
-        end_date = end,
+        tickers=SCOTTISH_TICKERS,
+        start_date=start,
+        end_date=end,
     )
 
     adls_path = upload_df_to_adls(
