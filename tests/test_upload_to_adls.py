@@ -2,8 +2,6 @@ from unittest.mock import patch, MagicMock
 import pandas as pd
 from upload_to_adls import upload_df_to_adls
 
-# 注意一下:昨天我们在 pyproject.toml 里加的 pythonpath = ["batch/ingestion"],如果 upload_to_adls.py 和 fetch_stock_data.py 在同一个目录(batch/ingestion/)下,这个配置应该已经够用,不需要再改。如果它在别的目录,记得先用 find . -name "upload_to_adls.py" 确认一下路径。
-
 def test_upload_df_to_adls_builds_correct_path():
     test_df = pd.DataFrame({"symbol": ["SHEL.L"], "close": [100.0]})
 
