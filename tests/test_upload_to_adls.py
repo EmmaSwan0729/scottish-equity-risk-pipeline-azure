@@ -1,11 +1,11 @@
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 import pandas as pd
 from upload_to_adls import upload_df_to_adls
 
 def test_upload_df_to_adls_builds_correct_path():
     test_df = pd.DataFrame({"symbol": ["SHEL.L"], "close": [100.0]})
 
-    with patch("upload_to_adls.get_service_client") as mock_get_client:
+    with patch("upload_to_adls.get_service_client"):
         result = upload_df_to_adls(
             df = test_df,
             account_name="teststorage",
