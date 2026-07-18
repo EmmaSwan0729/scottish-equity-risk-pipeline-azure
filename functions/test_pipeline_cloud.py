@@ -1,7 +1,9 @@
 import os
 import requests
 
-BASE_URL = "https://func-scottish-equity-risk-bzfzejb0a9hhanbu.uksouth-01.azurewebsites.net"
+BASE_URL = (
+    "https://func-scottish-equity-risk-bzfzejb0a9hhanbu.uksouth-01.azurewebsites.net"
+)
 FUNCTION_KEY = os.getenv("TEST_FUNCTION_KEY", "")
 
 FETCH_URL = f"{BASE_URL}/api/fetch_stock_data?code={FUNCTION_KEY}"
