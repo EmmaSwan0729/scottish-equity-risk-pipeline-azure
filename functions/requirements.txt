@@ -1,0 +1,11 @@
+# Uncomment to enable Azure Monitor OpenTelemetry
+# Ref: aka.ms/functions-azure-monitor-python
+# azure-monitor-opentelemetry
+
+azure-functions
+yfinance==1.5.1
+pandas==2.2.2
+PyYAML==6.0.1
+azure-identity==1.16.0
+azure-storage-file-datalake==12.25.0
+pyarrow==25.0.0
