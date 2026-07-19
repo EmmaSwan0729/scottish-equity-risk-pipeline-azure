@@ -1,4 +1,4 @@
-# ☁️ Scottish Equity Risk Pipeline (Azure)
+# Scottish Equity Risk Pipeline (Azure)
 
 An Azure-native rebuild of the [AWS/Kafka/Snowflake Scottish Equity Risk Pipeline](../scottish-equity-risk-pipeline), deliberately re-architected on Microsoft Azure to demonstrate breadth across two complementary cloud stacks. It tracks 8 Scottish-listed equities, computes daily risk metrics through a serverless-SQL batch pipeline, streams real-time prices through Event Hubs and Databricks Structured Streaming, and is orchestrated end-to-end with Azure Data Factory.
 
