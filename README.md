@@ -1,6 +1,6 @@
 # Scottish Equity Risk Pipeline (Azure)
 
-An Azure-native rebuild of the [AWS/Kafka/Snowflake Scottish Equity Risk Pipeline](../scottish-equity-risk-pipeline), deliberately re-architected on Microsoft Azure to demonstrate breadth across two complementary cloud stacks. It tracks 8 Scottish-listed equities, computes daily risk metrics through a serverless-SQL batch pipeline, streams real-time prices through Event Hubs and Databricks Structured Streaming, and is orchestrated end-to-end with Azure Data Factory.
+A fully Azure-native data pipeline that tracks 8 Scottish-listed equities, computes daily risk metrics through a serverless-SQL batch pipeline, streams real-time prices through Event Hubs and Databricks Structured Streaming, and is orchestrated end-to-end with Azure Data Factory.
 
 ---
 
@@ -11,25 +11,6 @@ This project simulates a real-world equity risk monitoring system for a portfoli
 - Portfolio managers need daily risk metrics (volatility, VaR 95%, Sharpe ratio, max drawdown) to assess exposure and make informed allocation decisions
 - Risk teams require real-time alerts when price movements breach defined thresholds
 - A unified batch + streaming architecture enables both historical analysis and live monitoring within a single data platform
-
----
-
-## Why a Second Cloud Build?
-
-Rather than building a second, unrelated portfolio project, this repository intentionally re-implements the same business problem on Azure, using Azure-native equivalents at every layer:
-
-| Concern | AWS version | Azure version |
-|---|---|---|
-| Object storage | S3 | ADLS Gen2 |
-| Streaming broker | Kafka (Confluent) | Event Hubs |
-| Stream processing | Spark Structured Streaming (self-hosted) | Databricks Structured Streaming |
-| Data warehouse | Snowflake | Synapse Serverless SQL |
-| Transformation | dbt-snowflake | Hand-written CETAS (Phase 1) → Fabric DW + dbt adapter (Phase 2, planned) |
-| Orchestration | Airflow (local) | Azure Data Factory |
-| Secrets | `.env` / GitHub Secrets | Key Vault + Managed Identity, `DefaultAzureCredential` throughout |
-| Compute ingestion | Local Python scripts | Azure Functions (Consumption plan) |
-
-The goal isn't just "same pipeline, different vendor" — several Azure-specific constraints (Serverless SQL's CETAS-only semantics, Key Vault's access-policy requirement for Databricks secret scopes, Scala-version compatibility for the Event Hubs connector) forced genuinely different design decisions, which is the point: to show the ability to reason about a problem independent of any one vendor's assumptions.
 
 ---
 
@@ -89,7 +70,7 @@ flowchart TD
 
 ## Equities Tracked
 
-Same universe as the AWS version, defined centrally in `config/tickers.yaml`:
+Defined centrally in `config/tickers.yaml`:
 
 | Ticker | Company |
 |---|---|
@@ -112,11 +93,11 @@ Same universe as the AWS version, defined centrally in `config/tickers.yaml`:
 
 **Key Vault Access Policy model, not Azure RBAC** — Databricks-backed secret scopes require the legacy Vault access-policy model; Azure RBAC alone is not sufficient for this integration. Also, Unity Catalog in **Standard** access mode blocks Maven library installation for the Event Hubs connector — **Dedicated** access mode was required.
 
-**Synapse is an analytics engine, not storage** — modelled analogously to Athena rather than Redshift/Snowflake: streaming alerts are written as Delta tables directly to ADLS Gen2, and queried by Synapse Serverless SQL rather than being loaded *into* Synapse.
+**Synapse is an analytics engine, not storage** — data lives in ADLS Gen2 as the source of truth; streaming alerts are written as Delta tables directly to ADLS Gen2, and queried by Synapse Serverless SQL via `OPENROWSET` rather than being loaded *into* Synapse itself.
 
-**CETAS instead of dbt (Phase 1)** — the official `dbt-synapse` adapter only supports Dedicated SQL Pools, and Serverless SQL doesn't support `CREATE TABLE AS SELECT`, only `CREATE EXTERNAL TABLE AS SELECT`. Rather than provision a Dedicated Pool purely to unlock dbt tooling, Phase 1 hand-writes CETAS-based SQL to reproduce the same RAW → STAGING → CORE → MARTS layering as the AWS/dbt version — same business logic (`stg_stock_prices`, `int_stock_daily`, `mart_risk_metrics`, `mart_portfolio_summary`, `mart_correlation`), different execution model. Phase 2 (planned) integrates Microsoft Fabric Data Warehouse with the official dbt adapter, giving a direct before/after comparison of hand-rolled vs. tool-assisted modelling on the same problem.
+**CETAS instead of dbt (Phase 1)** — the official `dbt-synapse` adapter only supports Dedicated SQL Pools, and Serverless SQL doesn't support `CREATE TABLE AS SELECT`, only `CREATE EXTERNAL TABLE AS SELECT`. Rather than provision a Dedicated Pool purely to unlock dbt tooling, Phase 1 hand-writes CETAS-based SQL to implement a layered RAW → STAGING → CORE → MARTS model (`stg_stock_prices`, `int_stock_daily`, `mart_risk_metrics`, `mart_portfolio_summary`, `mart_correlation`). Phase 2 (planned) integrates Microsoft Fabric Data Warehouse with the official dbt adapter, moving from hand-rolled to tool-assisted modelling.
 
-**No `CORR()` in T-SQL** — Serverless SQL has no built-in correlation function, unlike Snowflake. `mart_correlation` replaces Snowflake's `PIVOT` + 28-line hardcoded `UNION ALL` with a self-join on `symbol_1 < symbol_2` and a manually derived Pearson correlation formula; all 28 pairwise coefficients validated to fall within `[-1, 1]`.
+**No built-in `CORR()` in T-SQL** — Serverless SQL has no native correlation function. `mart_correlation` uses a self-join on `symbol_1 < symbol_2` and a manually derived Pearson correlation formula built from `SUM`/`COUNT` primitives; all 28 pairwise coefficients validated to fall within `[-1, 1]`.
 
 **OIDC over Publish Profile for deployment** — a Publish Profile is the simpler path, but it's a long-lived secret. OIDC via an Azure AD App Registration + Federated Credential (scoped to the `main` branch of this repo) issues short-lived tokens per run instead, and the RBAC role (`Website Contributor`) is scoped to the single Function App rather than the subscription or resource group — least-privilege, and consistent with the `DefaultAzureCredential`/RBAC pattern used everywhere else in the project.
 
@@ -216,9 +197,9 @@ This project runs on a Pay-As-You-Go subscription, and several components are pr
 
 ## Future Work
 
-- **Phase 2**: integrate Microsoft Fabric Data Warehouse and run the official `dbt-fabric`/`dbt-synapse` adapter for a full standard dbt project, as a direct comparison against Phase 1's hand-written CETAS approach
+- **Phase 2**: integrate Microsoft Fabric Data Warehouse and run the official `dbt-fabric`/`dbt-synapse` adapter for a full standard dbt project, moving beyond the hand-written CETAS approach
 - Synapse Studio native Git integration (GitHub or Azure DevOps) — deferred since current Synapse assets are plain SQL scripts under local git, not Synapse-managed artifacts
-- Visualisation/BI layer (dashboard equivalent to the AWS version's Streamlit app)
+- Visualisation/BI layer (interactive dashboard for portfolio risk metrics)
 
 ---
 
